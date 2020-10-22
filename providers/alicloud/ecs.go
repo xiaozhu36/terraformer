@@ -33,7 +33,11 @@ func resourceFromInstance(instance ecs.Instance) terraformutils.Resource {
 		instance.InstanceId+"__"+instance.InstanceName, // name
 		"alicloud_instance",
 		"alicloud",
-		map[string]string{},
+		map[string]string{
+			"dry_run":            "false",
+			"force_delete":       "false",
+			"include_data_disks": "true",
+		},
 		[]string{},
 		map[string]interface{}{},
 	)
@@ -65,7 +69,7 @@ func (g *EcsGenerator) InitResources() error {
 		raw, err := client.WithEcsClient(func(ecsClient *ecs.Client) (interface{}, error) {
 			request := ecs.CreateDescribeInstancesRequest()
 			request.Tag = &filters
-			request.RegionId = client.RegionID
+			request.RegionId = client.RegionId
 			request.PageSize = requests.NewInteger(pageSize)
 			request.PageNumber = requests.NewInteger(pageNumber)
 			return ecsClient.DescribeInstances(request)

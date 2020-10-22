@@ -54,8 +54,8 @@ func resourceFromZoneAttachmentResponse(zone pvtz.Zone) terraformutils.Resource 
 
 func resourceFromZoneRecordResponse(record pvtz.Record, zoneID string) terraformutils.Resource {
 	return terraformutils.NewResource(
-		strconv.Itoa(record.RecordId)+":"+zoneID,     // id
-		strconv.Itoa(record.RecordId)+"__"+record.Rr, // name
+		strconv.FormatInt(record.RecordId, 10)+":"+zoneID,     // id
+		strconv.FormatInt(record.RecordId, 10)+"__"+record.Rr, // name
 		"alicloud_pvtz_zone_record",
 		"alicloud",
 		map[string]string{},
@@ -74,7 +74,7 @@ func initZones(client *connectivity.AliyunClient) ([]pvtz.Zone, error) {
 	for remaining > 0 {
 		raw, err := client.WithPvtzClient(func(pvtzClient *pvtz.Client) (interface{}, error) {
 			request := pvtz.CreateDescribeZonesRequest()
-			request.RegionId = client.RegionID
+			request.RegionId = client.RegionId
 			request.PageSize = requests.NewInteger(pageSize)
 			request.PageNumber = requests.NewInteger(pageNumber)
 			return pvtzClient.DescribeZones(request)
@@ -105,7 +105,7 @@ func initZoneRecords(client *connectivity.AliyunClient, allZones []pvtz.Zone) ([
 		for remaining > 0 {
 			raw, err := client.WithPvtzClient(func(pvtzClient *pvtz.Client) (interface{}, error) {
 				request := pvtz.CreateDescribeZoneRecordsRequest()
-				request.RegionId = client.RegionID
+				request.RegionId = client.RegionId
 				request.ZoneId = zone.ZoneId
 				request.PageSize = requests.NewInteger(pageSize)
 				request.PageNumber = requests.NewInteger(pageNumber)

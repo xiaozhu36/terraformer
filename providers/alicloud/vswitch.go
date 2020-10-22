@@ -16,8 +16,7 @@ package alicloud
 
 import (
 	"github.com/GoogleCloudPlatform/terraformer/terraformutils"
-	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
-	"github.com/aliyun/alibaba-cloud-sdk-go/services/vpc"
+	util "github.com/alibabacloud-go/tea-utils/service"
 )
 
 // VSwitchGenerator Struct for generating AliCloud Elastic Compute Service
@@ -25,10 +24,10 @@ type VSwitchGenerator struct {
 	AliCloudService
 }
 
-func resourceFromVSwitchResponse(vswitch vpc.VSwitch) terraformutils.Resource {
+func resourceFromVSwitchResponse(vswitch map[string]interface{}) terraformutils.Resource {
 	return terraformutils.NewResource(
-		vswitch.VSwitchId, // nolint
-		vswitch.VSwitchId+"__"+vswitch.VSwitchName, // nolint
+		vswitch["VSwitchId"].(string),
+		vswitch["VSwitchId"].(string),
 		"alicloud_vswitch",
 		"alicloud",
 		map[string]string{},
@@ -43,32 +42,32 @@ func (g *VSwitchGenerator) InitResources() error {
 	if err != nil {
 		return err
 	}
-	remaining := 1
-	pageNumber := 1
-	pageSize := 10
-
-	allVSwitchs := make([]vpc.VSwitch, 0)
-
-	for remaining > 0 {
-		raw, err := client.WithVpcClient(func(vpcClient *vpc.Client) (interface{}, error) {
-			request := vpc.CreateDescribeVSwitchesRequest()
-			request.RegionId = client.RegionID
-			request.PageSize = requests.NewInteger(pageSize)
-			request.PageNumber = requests.NewInteger(pageNumber)
-			return vpcClient.DescribeVSwitches(request)
-		})
+	conn, err := client.NewVpcClient()
+	if err != nil {
+		return err
+	}
+	action := "DescribeVSwitches"
+	request := map[string]interface{}{
+		"RegionId":   client.RegionId,
+		"PageNumber": 1,
+		"PageSize":   50,
+	}
+	allVSwitches := make([]interface{}, 0, 50)
+	for {
+		response, err := conn.DoRequest(StringPointer(action), nil, StringPointer("POST"), StringPointer("2016-04-28"), StringPointer("AK"), nil, request, &util.RuntimeOptions{})
 		if err != nil {
 			return err
 		}
-
-		response := raw.(*vpc.DescribeVSwitchesResponse)
-		allVSwitchs = append(allVSwitchs, response.VSwitches.VSwitch...)
-		remaining = response.TotalCount - pageNumber*pageSize
-		pageNumber++
+		vswitches := response["VSwitches"].(map[string]interface{})["VSwitch"].([]interface{})
+		allVSwitches = append(allVSwitches, vswitches...)
+		if len(vswitches) < 50 {
+			break
+		}
+		request["PageNumber"] = request["PageNumber"].(int) + 1
 	}
 
-	for _, VSwitch := range allVSwitchs {
-		resource := resourceFromVSwitchResponse(VSwitch)
+	for _, vswitch := range allVSwitches {
+		resource := resourceFromVSwitchResponse(vswitch.(map[string]interface{}))
 		g.Resources = append(g.Resources, resource)
 	}
 

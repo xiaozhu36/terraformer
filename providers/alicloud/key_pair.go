@@ -52,7 +52,7 @@ func (g *KeyPairGenerator) InitResources() error {
 	for remaining > 0 {
 		raw, err := client.WithEcsClient(func(ecsClient *ecs.Client) (interface{}, error) {
 			request := ecs.CreateDescribeKeyPairsRequest()
-			request.RegionId = client.RegionID
+			request.RegionId = client.RegionId
 			request.PageSize = requests.NewInteger(pageSize)
 			request.PageNumber = requests.NewInteger(pageNumber)
 			return ecsClient.DescribeKeyPairs(request)

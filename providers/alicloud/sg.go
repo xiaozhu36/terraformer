@@ -76,7 +76,7 @@ func initSecurityGroupRules(client *connectivity.AliyunClient, securityGroups []
 		}
 		raw, err := client.WithEcsClient(func(ecsClient *ecs.Client) (interface{}, error) {
 			request := ecs.CreateDescribeSecurityGroupAttributeRequest()
-			request.RegionId = client.RegionID
+			request.RegionId = client.RegionId
 			request.SecurityGroupId = securityGroup.SecurityGroupId
 			return ecsClient.DescribeSecurityGroupAttribute(request)
 		})
@@ -103,7 +103,7 @@ func initSecurityGroups(client *connectivity.AliyunClient) ([]ecs.SecurityGroup,
 	for remaining > 0 {
 		raw, err := client.WithEcsClient(func(ecsClient *ecs.Client) (interface{}, error) {
 			request := ecs.CreateDescribeSecurityGroupsRequest()
-			request.RegionId = client.RegionID
+			request.RegionId = client.RegionId
 			request.PageSize = requests.NewInteger(pageSize)
 			request.PageNumber = requests.NewInteger(pageNumber)
 			return ecsClient.DescribeSecurityGroups(request)

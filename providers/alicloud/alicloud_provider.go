@@ -16,9 +16,9 @@ package alicloud
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/GoogleCloudPlatform/terraformer/terraformutils"
+	"github.com/GoogleCloudPlatform/terraformer/terraformutils/providerwrapper"
 	"github.com/zclconf/go-cty/cty"
 )
 
@@ -29,39 +29,25 @@ type AliCloudProvider struct { //nolint
 	profile string
 }
 
-// GetConfig Converts json config to go-cty
+const GlobalRegion = "alicloud-global"
+
+var SupportedGlobalResources = []string{
+	"ram",
+	"alidns",
+	"dns",
+}
+
 func (p *AliCloudProvider) GetConfig() cty.Value {
-	args := p.Service.GetArgs()
-	profile := args["profile"].(string)
-	config, err := LoadConfigFromProfile(profile)
-	if err != nil {
-		fmt.Println("ERROR:", err)
-	}
-
-	region := p.region
-	if region == "" {
-		region = config.RegionID
-	}
-
-	var val cty.Value
-	if config.RAMRoleArn != "" {
-		val = cty.ObjectVal(map[string]cty.Value{
-			"region":  cty.StringVal(region),
-			"profile": cty.StringVal(profile),
-			"assume_role": cty.SetVal([]cty.Value{
-				cty.ObjectVal(map[string]cty.Value{
-					"role_arn": cty.StringVal(config.RAMRoleArn),
-				}),
-			}),
-		})
-	} else {
-		val = cty.ObjectVal(map[string]cty.Value{
-			"region":  cty.StringVal(region),
-			"profile": cty.StringVal(profile),
+	if p.region != GlobalRegion {
+		return cty.ObjectVal(map[string]cty.Value{
+			"region":                 cty.StringVal(p.region),
+			"skip_region_validation": cty.True,
 		})
 	}
-
-	return val
+	return cty.ObjectVal(map[string]cty.Value{
+		"region":                 cty.StringVal(""),
+		"skip_region_validation": cty.True,
+	})
 }
 
 // GetResourceConnections Gets resource connections for alicloud
@@ -73,37 +59,17 @@ func (p AliCloudProvider) GetResourceConnections() map[string]map[string][]strin
 
 // GetProviderData Used for generated HCL2 for the provider
 func (p AliCloudProvider) GetProviderData(arg ...string) map[string]interface{} {
-	args := p.Service.GetArgs()
-	profile := args["profile"].(string)
-	config, err := LoadConfigFromProfile(profile)
-	if err != nil {
-		fmt.Println("ERROR:", err)
+	alicloudConfig := map[string]interface{}{
+		"version": providerwrapper.GetProviderVersion(p.GetName()),
 	}
-
-	region := p.region
-	if region == "" {
-		region = config.RegionID
-	}
-
-	if config.RAMRoleArn != "" {
-		return map[string]interface{}{
-			"provider": map[string]interface{}{
-				"alicloud": map[string]interface{}{
-					"region":  region,
-					"profile": profile,
-					"assume_role": map[string]interface{}{
-						"role_arn": config.RAMRoleArn,
-					},
-				},
-			},
-		}
+	if p.region == GlobalRegion {
+		alicloudConfig["region"] = "cn-hangzhou"
+	} else {
+		alicloudConfig["region"] = p.region
 	}
 	return map[string]interface{}{
 		"provider": map[string]interface{}{
-			"alicloud": map[string]interface{}{
-				"region":  region,
-				"profile": profile,
-			},
+			"alicloud": alicloudConfig,
 		},
 	}
 }
@@ -131,8 +97,9 @@ func (p *AliCloudProvider) InitService(serviceName string, verbose bool) error {
 	p.Service.SetVerbose(verbose)
 	p.Service.SetProviderName(p.GetName())
 	p.Service.SetArgs(map[string]interface{}{
-		"region":  p.region,
-		"profile": p.profile,
+		"region":                 p.region,
+		"profile":                p.profile,
+		"skip_region_validation": true,
 	})
 	return nil
 }
@@ -140,16 +107,20 @@ func (p *AliCloudProvider) InitService(serviceName string, verbose bool) error {
 // GetSupportedService Gets a list of all supported services
 func (p *AliCloudProvider) GetSupportedService() map[string]terraformutils.ServiceGenerator {
 	return map[string]terraformutils.ServiceGenerator{
-		"dns":     &DNSGenerator{},
-		"ecs":     &EcsGenerator{},
-		"keypair": &KeyPairGenerator{},
-		"nat":     &NatGatewayGenerator{},
-		"pvtz":    &PvtzGenerator{},
-		"ram":     &RAMGenerator{},
-		"rds":     &RdsGenerator{},
-		"sg":      &SgGenerator{},
-		"slb":     &SlbGenerator{},
-		"vpc":     &VpcGenerator{},
-		"vswitch": &VSwitchGenerator{},
+		"resourcemanager": &ResourceManagerGenerator{},
+		"dcdn":            &DCDNGenerator{},
+		"eci":             &EciGenerator{},
+		"alidns":          &AlidnsGenerator{},
+		"dns":             &DNSGenerator{},
+		"ecs":             &EcsGenerator{},
+		"keypair":         &KeyPairGenerator{},
+		"nat":             &NatGatewayGenerator{},
+		"pvtz":            &PvtzGenerator{},
+		"ram":             &RAMGenerator{},
+		"rds":             &RdsGenerator{},
+		"sg":              &SgGenerator{},
+		"slb":             &SlbGenerator{},
+		"vpc":             &VpcGenerator{},
+		"vswitch":         &VSwitchGenerator{},
 	}
 }

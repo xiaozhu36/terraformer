@@ -75,7 +75,7 @@ func initSlb(client *connectivity.AliyunClient) ([]slb.LoadBalancer, error) {
 	for remaining > 0 {
 		raw, err := client.WithSlbClient(func(slbClient *slb.Client) (interface{}, error) {
 			request := slb.CreateDescribeLoadBalancersRequest()
-			request.RegionId = client.RegionID
+			request.RegionId = client.RegionId
 			request.PageSize = requests.NewInteger(pageSize)
 			request.PageNumber = requests.NewInteger(pageNumber)
 			return slbClient.DescribeLoadBalancers(request)
@@ -101,7 +101,7 @@ func initVServerGroups(client *connectivity.AliyunClient, allLoadBalancers []slb
 		}
 		raw, err := client.WithSlbClient(func(slbClient *slb.Client) (interface{}, error) {
 			request := slb.CreateDescribeVServerGroupsRequest()
-			request.RegionId = client.RegionID
+			request.RegionId = client.RegionId
 			request.LoadBalancerId = loadBalancer.LoadBalancerId
 			return slbClient.DescribeVServerGroups(request)
 		})
@@ -124,7 +124,7 @@ func initSlbListeners(client *connectivity.AliyunClient, allLoadBalancers []slb.
 		}
 		raw, err := client.WithSlbClient(func(slbClient *slb.Client) (interface{}, error) {
 			request := slb.CreateDescribeLoadBalancerAttributeRequest()
-			request.RegionId = client.RegionID
+			request.RegionId = client.RegionId
 			request.LoadBalancerId = loadBalancer.LoadBalancerId
 			return slbClient.DescribeLoadBalancerAttribute(request)
 		})

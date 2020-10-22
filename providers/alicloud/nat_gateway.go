@@ -52,7 +52,7 @@ func (g *NatGatewayGenerator) InitResources() error {
 	for remaining > 0 {
 		raw, err := client.WithVpcClient(func(vpcClient *vpc.Client) (interface{}, error) {
 			request := vpc.CreateDescribeNatGatewaysRequest()
-			request.RegionId = client.RegionID
+			request.RegionId = client.RegionId
 			request.PageSize = requests.NewInteger(pageSize)
 			request.PageNumber = requests.NewInteger(pageNumber)
 			return vpcClient.DescribeNatGateways(request)

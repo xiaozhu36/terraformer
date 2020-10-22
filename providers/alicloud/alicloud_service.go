@@ -67,8 +67,8 @@ func (s *AliCloudService) LoadClientFromProfile() (*connectivity.AliyunClient, e
 		return nil, err
 	}
 
-	config.RegionID = region
-	config.Region = connectivity.Region(config.RegionID)
+	config.RegionId = region
+	config.Region = connectivity.Region(config.RegionId)
 
 	return config.Client()
 }
@@ -123,18 +123,25 @@ func LoadConfigFromProfile(profileName string) (*connectivity.Config, error) {
 	}
 
 	conf := connectivity.Config{
-		AccessKey:          config.AccessKeyID,
-		SecretKey:          config.AccessKeySecret,
-		EcsRoleName:        config.Name,
-		Region:             connectivity.Region(config.RegionID),
-		RegionID:           config.RegionID,
-		SecurityToken:      config.StsToken,
-		RAMRoleArn:         config.RAMRoleArn,
-		RAMRoleSessionName: config.RAMSessionName,
+		AccessKey:            config.AccessKeyID,
+		SecretKey:            config.AccessKeySecret,
+		EcsRoleName:          config.Name,
+		Region:               connectivity.Region(config.RegionID),
+		RegionId:             config.RegionID,
+		SecurityToken:        config.StsToken,
+		RamRoleArn:           config.RAMRoleArn,
+		RamRoleSessionName:   config.RAMSessionName,
+		Protocol:             "HTTPS",
+		Endpoints:            map[string]interface{}{},
+		SkipRegionValidation: true,
 		// OtsInstanceName:    "", // TODO: Figure out what to do with this
 		// AccountId:          "", // TODO: Figure out what to do with this
 		// RamRolePolicy:      "", // TODO: Figure out what to do with this
 	}
 
 	return &conf, nil
+}
+
+func StringPointer(s string) *string {
+	return &s
 }

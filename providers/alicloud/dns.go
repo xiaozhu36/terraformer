@@ -15,6 +15,8 @@
 package alicloud
 
 import (
+	"fmt"
+
 	"github.com/GoogleCloudPlatform/terraformer/providers/alicloud/connectivity"
 	"github.com/GoogleCloudPlatform/terraformer/terraformutils"
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
@@ -58,9 +60,9 @@ func initDomains(client *connectivity.AliyunClient) ([]alidns.Domain, error) {
 	allDomains := make([]alidns.Domain, 0)
 
 	for remaining > 0 {
-		raw, err := client.WithDNSClient(func(alidnsClient *alidns.Client) (interface{}, error) {
+		raw, err := client.WithAlidnsClient(func(alidnsClient *alidns.Client) (interface{}, error) {
 			request := alidns.CreateDescribeDomainsRequest()
-			request.RegionId = client.RegionID
+			request.RegionId = client.RegionId
 			request.PageSize = requests.NewInteger(pageSize)
 			request.PageNumber = requests.NewInteger(pageNumber)
 			return alidnsClient.DescribeDomains(request)
@@ -87,9 +89,9 @@ func initDomainRecords(client *connectivity.AliyunClient, allDomains []alidns.Do
 		pageSize := 10
 
 		for remaining > 0 {
-			raw, err := client.WithDNSClient(func(alidnsClient *alidns.Client) (interface{}, error) {
+			raw, err := client.WithAlidnsClient(func(alidnsClient *alidns.Client) (interface{}, error) {
 				request := alidns.CreateDescribeDomainRecordsRequest()
-				request.RegionId = client.RegionID
+				request.RegionId = client.RegionId
 				request.DomainName = domain.DomainName
 				request.PageSize = requests.NewInteger(pageSize)
 				request.PageNumber = requests.NewInteger(pageNumber)
@@ -111,6 +113,7 @@ func initDomainRecords(client *connectivity.AliyunClient, allDomains []alidns.Do
 
 // InitResources Gets the list of all alidns domain ids and generates resources
 func (g *DNSGenerator) InitResources() error {
+	fmt.Println("[Warning] The resource dns has been deprecated. Please use alidns instead.")
 	client, err := g.LoadClientFromProfile()
 	if err != nil {
 		return err

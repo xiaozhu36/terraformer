@@ -16,8 +16,7 @@ package alicloud
 
 import (
 	"github.com/GoogleCloudPlatform/terraformer/terraformutils"
-	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
-	"github.com/aliyun/alibaba-cloud-sdk-go/services/vpc"
+	util "github.com/alibabacloud-go/tea-utils/service"
 )
 
 // VpcGenerator Struct for generating AliCloud Elastic Compute Service
@@ -25,10 +24,10 @@ type VpcGenerator struct {
 	AliCloudService
 }
 
-func resourceFromVpcResponse(vpc vpc.Vpc) terraformutils.Resource {
+func resourceFromVpcResponse(vpc map[string]interface{}) terraformutils.Resource {
 	return terraformutils.NewResource(
-		vpc.VpcId,                  // id
-		vpc.VpcId+"__"+vpc.VpcName, // name
+		vpc["VpcId"].(string),
+		vpc["VpcId"].(string),
 		"alicloud_vpc",
 		"alicloud",
 		map[string]string{},
@@ -43,34 +42,32 @@ func (g *VpcGenerator) InitResources() error {
 	if err != nil {
 		return err
 	}
-	remaining := 1
-	pageNumber := 1
-	pageSize := 10
-
-	allVpcs := make([]vpc.Vpc, 0)
-
-	for remaining > 0 {
-		raw, err := client.WithVpcClient(func(vpcClient *vpc.Client) (interface{}, error) {
-			request := vpc.CreateDescribeVpcsRequest()
-			request.RegionId = client.RegionID
-			request.PageSize = requests.NewInteger(pageSize)
-			request.PageNumber = requests.NewInteger(pageNumber)
-			return vpcClient.DescribeVpcs(request)
-		})
+	conn, err := client.NewVpcClient()
+	if err != nil {
+		return err
+	}
+	action := "DescribeVpcs"
+	request := map[string]interface{}{
+		"RegionId":   client.RegionId,
+		"PageNumber": 1,
+		"PageSize":   50,
+	}
+	allVpcs := make([]interface{}, 0, 50)
+	for {
+		response, err := conn.DoRequest(StringPointer(action), nil, StringPointer("POST"), StringPointer("2016-04-28"), StringPointer("AK"), nil, request, &util.RuntimeOptions{})
 		if err != nil {
 			return err
 		}
-
-		response := raw.(*vpc.DescribeVpcsResponse)
-		allVpcs = append(allVpcs, response.Vpcs.Vpc...)
-		remaining = response.TotalCount - pageNumber*pageSize
-		pageNumber++
+		vpcs := response["Vpcs"].(map[string]interface{})["Vpc"].([]interface{})
+		allVpcs = append(allVpcs, vpcs...)
+		if len(vpcs) < 50 {
+			break
+		}
+		request["PageNumber"] = request["PageNumber"].(int) + 1
 	}
-
-	for _, Vpc := range allVpcs {
-		resource := resourceFromVpcResponse(Vpc)
+	for _, vpc := range allVpcs {
+		resource := resourceFromVpcResponse(vpc.(map[string]interface{}))
 		g.Resources = append(g.Resources, resource)
 	}
-
 	return nil
 }

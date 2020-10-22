@@ -52,7 +52,7 @@ func (g *RdsGenerator) InitResources() error {
 	for remaining > 0 {
 		raw, err := client.WithRdsClient(func(rdsClient *rds.Client) (interface{}, error) {
 			request := rds.CreateDescribeDBInstancesRequest()
-			request.RegionId = client.RegionID
+			request.RegionId = client.RegionId
 			request.PageSize = requests.NewInteger(pageSize)
 			request.PageNumber = requests.NewInteger(pageNumber)
 			return rdsClient.DescribeDBInstances(request)
